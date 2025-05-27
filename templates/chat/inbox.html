@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat Inbox{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Chat Inbox</h1>
+    
+    {% if chat_partners %}
+        <div class="list-group">
+            {% for partner in chat_partners %}
+                <a href="{% url 'chat_detail' partner.id %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between align-items-center">
+                        <div>
+                            <h5 class="mb-1">{{ partner.user.get_full_name }}</h5>
+                            <p class="mb-1 text-muted">{{ partner.department|default:"Department not specified" }}</p>
+                        </div>
+                        <div class="text-end">
+                            {% if partner.role == 'teacher' %}
+                                <span class="badge bg-primary">Teacher</span>
+                            {% else %}
+                                <span class="badge bg-success">Student</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <p>No conversations yet. Start chatting with teachers or students!</p>
+        </div>
+        {% if user_profile.role == 'student' %}
+            <a href="{% url 'teacher_list' %}" class="btn btn-primary">
+                <i class="bi bi-chat"></i> Find Teachers to Chat With
+            </a>
+        {% endif %}
+    {% endif %}
+</div>
+
+<script>
+    // Function to update unread message count
+    function updateUnreadCount() {
+        fetch('{% url "get_unread_count" %}')
+            .then(response => response.json())
+            .then(data => {
+                const unreadCount = data.unread_count;
+                const unreadBadge = document.getElementById('unread-count');
+                if (unreadCount > 0) {
+                    unreadBadge.textContent = unreadCount;
+                    unreadBadge.style.display = 'inline';
+                } else {
+                    unreadBadge.style.display = 'none';
+                }
+            });
+    }
+
+    // Update unread count every 30 seconds
+    updateUnreadCount();
+    setInterval(updateUnreadCount, 30000);
+</script>
+{% endblock %} 

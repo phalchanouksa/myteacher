@@ -1,0 +1,252 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls static admin_modify %}
+
+{% block extrahead %}{{ block.super }}
+<script type="text/javascript" src="{% url 'admin:jsi18n' %}"></script>
+{{ media }}
+{% endblock %}
+
+{% block extrastyle %}{{ block.super }}<link rel="stylesheet" type="text/css" href="{% static "admin/css/forms.css" %}">{% endblock %}
+
+{% block coltype %}colM{% endblock %}
+
+{% block bodyclass %}{{ block.super }} app-{{ opts.app_label }} model-{{ opts.model_name }} change-form{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% trans 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; <a href="{% url 'admin:accounts_teacher_changelist' %}">Teachers</a>
+&rsaquo; Add Teacher
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    <form method="post" id="teacher_form" novalidate>
+        {% csrf_token %}
+        <div>
+            <fieldset class="module aligned">
+                <h2>Teacher Information</h2>
+                
+                <div class="form-row field-username">
+                    <div>
+                        <label for="{{ form.username.id_for_label }}" class="required">Username:</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.username.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row field-first_name">
+                    <div>
+                        <label for="{{ form.first_name.id_for_label }}" class="required">First name:</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.first_name.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row field-last_name">
+                    <div>
+                        <label for="{{ form.last_name.id_for_label }}" class="required">Last name:</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.last_name.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row field-email">
+                    <div>
+                        <label for="{{ form.email.id_for_label }}" class="required">Email:</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.email.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row field-teacher_id">
+                    <div>
+                        <label for="{{ form.teacher_id.id_for_label }}" class="required">Teacher ID:</label>
+                        {{ form.teacher_id }}
+                        {% if form.teacher_id.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.teacher_id.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row field-department">
+                    <div>
+                        <label for="{{ form.department.id_for_label }}">Department:</label>
+                        {{ form.department }}
+                        {% if form.department.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.department.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row field-designation">
+                    <div>
+                        <label for="{{ form.designation.id_for_label }}">Designation:</label>
+                        {{ form.designation }}
+                        {% if form.designation.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.designation.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row field-qualification">
+                    <div>
+                        <label for="{{ form.qualification.id_for_label }}">Qualification:</label>
+                        {{ form.qualification }}
+                        {% if form.qualification.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.qualification.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row field-date_of_birth">
+                    <div>
+                        <label for="{{ form.date_of_birth.id_for_label }}">Date of Birth:</label>
+                        {{ form.date_of_birth }}
+                        {% if form.date_of_birth.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.date_of_birth.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row field-address">
+                    <div>
+                        <label for="{{ form.address.id_for_label }}">Address:</label>
+                        {{ form.address }}
+                        {% if form.address.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.address.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row field-phone_number">
+                    <div>
+                        <label for="{{ form.phone_number.id_for_label }}">Phone Number:</label>
+                        {{ form.phone_number }}
+                        {% if form.phone_number.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.phone_number.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row field-joining_date">
+                    <div>
+                        <label for="{{ form.joining_date.id_for_label }}">Joining Date:</label>
+                        {{ form.joining_date }}
+                        {% if form.joining_date.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.joining_date.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="form-row field-password1">
+                    <div>
+                        <label for="{{ form.password1.id_for_label }}" class="required">Password:</label>
+                        {{ form.password1 }}
+                        {% if form.password1.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.password1.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                        <div class="help">{{ form.password1.help_text }}</div>
+                    </div>
+                </div>
+                
+                <div class="form-row field-password2">
+                    <div>
+                        <label for="{{ form.password2.id_for_label }}" class="required">Password confirmation:</label>
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.password2.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                        <div class="help">{{ form.password2.help_text }}</div>
+                    </div>
+                </div>
+                
+                <div class="form-row field-is_staff">
+                    <div class="checkbox-row">
+                        {{ form.is_staff }}
+                        <label for="{{ form.is_staff.id_for_label }}" class="vCheckboxLabel">Staff status</label>
+                        {% if form.is_staff.errors %}
+                            <ul class="errorlist">
+                                {% for error in form.is_staff.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                        <div class="help">{{ form.is_staff.help_text }}</div>
+                    </div>
+                </div>
+            </fieldset>
+            
+            <div class="submit-row">
+                <input type="submit" value="Save" class="default" name="_save">
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ teacher.user.first_name }} {{ teacher.user.last_name }} - Details{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="{% url 'teacher_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Teachers
+    </a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h2 class="mb-0">{{ teacher.user.first_name }} {{ teacher.user.last_name }}</h2>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Teacher ID:</strong> {{ teacher.identifier }}</p>
+                <p><strong>Department:</strong> {{ teacher.department|default:"Not specified" }}</p>
+                <p><strong>Designation:</strong> {{ teacher.designation|default:"Not specified" }}</p>
+                <p><strong>Qualification:</strong> {{ teacher.qualification|default:"Not specified" }}</p>
+                <p><strong>Joining Date:</strong> {{ teacher.joining_date|date:"F d, Y"|default:"Not specified" }}</p>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Overall Rating</h5>
+                        {% if avg_rating %}
+                            <div class="d-flex align-items-center mb-2">
+                                <h3 class="me-2 mb-0">{{ avg_rating|floatformat:1 }}/5</h3>
+                                <div class="stars fs-4">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= avg_rating|floatformat:0|add:0 %}
+                                            <i class="bi bi-star-fill text-warning"></i>
+                                        {% else %}
+                                            <i class="bi bi-star text-muted"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <p class="text-muted">Based on {{ ratings.count }} rating{{ ratings.count|pluralize }}</p>
+                        {% else %}
+                            <p class="text-muted">No ratings yet</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if user.profile.role == 'student' %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h3 class="mb-0">{% if user_has_rated %}Update Your Rating{% else %}Rate This Teacher{% endif %}</h3>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label class="form-label">Your Rating</label>
+                    <input type="hidden" name="{{ form.rating.html_name }}" id="rating-input" value="{{ form.rating.value|default:'5' }}">
+                    <div class="star-rating">
+                        <div class="stars d-flex">
+                            <span class="star" data-value="1"><i class="bi bi-star-fill"></i></span>
+                            <span class="star" data-value="2"><i class="bi bi-star-fill"></i></span>
+                            <span class="star" data-value="3"><i class="bi bi-star-fill"></i></span>
+                            <span class="star" data-value="4"><i class="bi bi-star-fill"></i></span>
+                            <span class="star" data-value="5"><i class="bi bi-star-fill"></i></span>
+                        </div>
+                        <div class="rating-value mt-1">5 out of 5</div>
+                    </div>
+                </div>
+                
+                <style>
+                    .star-rating .stars {
+                        font-size: 2rem;
+                        gap: 0.5rem;
+                    }
+                    .star-rating .star {
+                        cursor: pointer;
+                        color: #ccc;
+                        transition: color 0.2s;
+                    }
+                    .star-rating .star.selected,
+                    .star-rating .star.hovered {
+                        color: #ffc107;
+                    }
+                    .rating-value {
+                        font-weight: bold;
+                    }
+                </style>
+                
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const stars = document.querySelectorAll('.star-rating .star');
+                        const ratingInput = document.getElementById('rating-input');
+                        const ratingValue = document.querySelector('.rating-value');
+                        
+                        // Initialize with current value
+                        let currentRating = parseInt(ratingInput.value) || 5;
+                        updateStars(currentRating);
+                        
+                        // Add event listeners to stars
+                        stars.forEach(star => {
+                            // Click event
+                            star.addEventListener('click', function() {
+                                currentRating = parseInt(this.dataset.value);
+                                ratingInput.value = currentRating;
+                                updateStars(currentRating);
+                                ratingValue.textContent = currentRating + ' out of 5';
+                            });
+                            
+                            // Hover events
+                            star.addEventListener('mouseenter', function() {
+                                const hoverRating = parseInt(this.dataset.value);
+                                stars.forEach(s => {
+                                    if (parseInt(s.dataset.value) <= hoverRating) {
+                                        s.classList.add('hovered');
+                                    } else {
+                                        s.classList.remove('hovered');
+                                    }
+                                });
+                            });
+                        });
+                        
+                        // Mouse leave event for the entire container
+                        document.querySelector('.stars').addEventListener('mouseleave', function() {
+                            stars.forEach(s => s.classList.remove('hovered'));
+                        });
+                        
+                        // Function to update star display
+                        function updateStars(rating) {
+                            stars.forEach(star => {
+                                if (parseInt(star.dataset.value) <= rating) {
+                                    star.classList.add('selected');
+                                } else {
+                                    star.classList.remove('selected');
+                                }
+                            });
+                        }
+                    });
+                </script>
+                <div class="mb-3">
+                    <label for="{{ form.comment.id_for_label }}" class="form-label">Comment</label>
+                    <textarea name="{{ form.comment.html_name }}" id="{{ form.comment.auto_id }}" class="form-control" rows="4" placeholder="Share your experience with this teacher...">{{ form.comment.value|default:'' }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    {% if user_has_rated %}Update Rating{% else %}Submit Rating{% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+{% endif %}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="mb-0">Student Reviews</h3>
+    </div>
+    <div class="card-body">
+        {% if ratings %}
+            <div class="list-group">
+                {% for rating in ratings %}
+                    <div class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0">{{ rating.student.user.first_name }} {{ rating.student.user.last_name }}</h5>
+                            <div class="d-flex align-items-center">
+                                <div class="stars me-2">
+                                    {% for i in "12345" %}
+                                        {% if forloop.counter <= rating.rating %}
+                                            <i class="bi bi-star-fill text-warning"></i>
+                                        {% else %}
+                                            <i class="bi bi-star text-muted"></i>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                                <small class="text-muted">{{ rating.created_at|date:"F d, Y" }}</small>
+                            </div>
+                        </div>
+                        {% if rating.comment %}
+                            <p class="mb-0">{{ rating.comment }}</p>
+                        {% else %}
+                            <p class="text-muted mb-0">No comment provided</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-muted">No reviews yet. Be the first to review!</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

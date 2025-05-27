@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - MyTeacher{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2 class="mb-4">Welcome to MyTeacher</h2>
+        <div class="alert alert-success">
+            <p>You are logged in as <strong>{{ user.username }}</strong>.</p>
+            {% if user.profile %}
+                <p>Role: <strong>{{ user.profile.get_role_display }}</strong></p>
+                {% if user.profile.identifier %}
+                    <p>ID: {{ user.profile.identifier }}</p>
+                {% endif %}
+            {% else %}
+                <p>Role: <strong>Not assigned</strong></p>
+            {% endif %}
+        </div>
+        <div class="card">
+            <div class="card-header">
+                {% if user.profile %}
+                    {% if user.profile.role == 'student' %}
+                        Student Dashboard
+                    {% elif user.profile.role == 'teacher' %}
+                        Teacher Dashboard
+                    {% else %}
+                        Admin Dashboard
+                    {% endif %}
+                {% else %}
+                    User Dashboard
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Your Profile</h5>
+                <p class="card-text">
+                    <strong>Username:</strong> {{ user.username }}<br>
+                    <strong>Name:</strong> {% if user.first_name or user.last_name %}{{ user.first_name }} {{ user.last_name }}{% else %}Not provided{% endif %}<br>
+                    <strong>Email:</strong> {{ user.email }}<br>
+                    <strong>Role:</strong> {{ user.profile.get_role_display }}<br>
+                    <strong>ID:</strong> {% if user.profile.identifier %}{{ user.profile.identifier }}{% else %}Not assigned{% endif %}<br>
+                    
+                    {% if user.profile %}
+                        {% if user.profile.date_of_birth %}
+                            <strong>Date of Birth:</strong> {{ user.profile.date_of_birth }}<br>
+                        {% endif %}
+                        {% if user.profile.address %}
+                            <strong>Address:</strong> {{ user.profile.address }}<br>
+                        {% endif %}
+                        {% if user.profile.phone_number %}
+                            <strong>Phone:</strong> {{ user.profile.phone_number }}<br>
+                        {% endif %}
+                        
+                        {% if user.profile.role == 'teacher' %}
+                            <hr>
+                            <h6>Teacher Information</h6>
+                            {% if user.profile.department %}
+                                <strong>Department:</strong> {{ user.profile.department }}<br>
+                            {% endif %}
+                            {% if user.profile.designation %}
+                                <strong>Designation:</strong> {{ user.profile.designation }}<br>
+                            {% endif %}
+                            {% if user.profile.qualification %}
+                                <strong>Qualification:</strong> {{ user.profile.qualification }}<br>
+                            {% endif %}
+                            {% if user.profile.joining_date %}
+                                <strong>Joining Date:</strong> {{ user.profile.joining_date }}<br>
+                            {% endif %}
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-warning mt-3">
+                            <p>Your profile is not complete. Please contact an administrator.</p>
+                        </div>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+        
+        {% if user.profile and user.profile.role == 'student' %}
+        <div class="card mt-4">
+            <div class="card-header">
+                Student Features
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Teacher Ratings</h5>
+                <p class="card-text">
+                    View all teachers, check their ratings, and share your own experience by rating them.
+                </p>
+                <a href="{% url 'teacher_list' %}" class="btn btn-primary">
+                    <i class="bi bi-star-fill"></i> View & Rate Teachers
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
