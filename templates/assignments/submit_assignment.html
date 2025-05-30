@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block title %}Submit Assignment - {{ assignment.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'assignments:assignment-list' %}">Assignments</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'assignments:assignment-detail' assignment.pk %}">{{ assignment.title|truncatewords:3 }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Submit Assignment</li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header">
+            <h2 class="mb-0">Submit Assignment: {{ assignment.title }}</h2>
+        </div>
+        <div class="card-body">
+            {% if assignment.is_past_due %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Note:</strong> The due date for this assignment has passed. 
+                    {% if submission %}
+                        You can still update your submission, but it will be marked as late.
+                    {% else %}
+                        Late submissions may not be accepted by your instructor.
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <div class="assignment-details mb-4 p-3 border rounded">
+                <h5>Assignment Details</h5>
+                <p class="mb-1"><strong>Due Date:</strong> {{ assignment.due_date|date:"F d, Y H:i" }}</p>
+                <p class="mb-0"><strong>Max Marks:</strong> {{ assignment.max_marks }}</p>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" class="mt-4">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <div class="mb-4">
+                    <label for="{{ form.file.id_for_label }}" class="form-label">
+                        Upload File (PDF, DOC, DOCX, TXT)
+                    </label>
+                    <input type="file" class="form-control {% if form.file.errors %}is-invalid{% endif %}" 
+                           id="{{ form.file.id_for_label }}" name="{{ form.file.name }}" 
+                           accept=".pdf,.doc,.docx,.txt">
+                    {% if submission and submission.file %}
+                        <div class="form-text">
+                            Current file: 
+                            <a href="{% url 'assignments:submission-download' submission.pk %}" target="_blank">
+                                {{ submission.file.name|cut:"submissions/" }}
+                            </a>
+                        </div>
+                    {% endif %}
+                    {% for error in form.file.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+
+                <div class="mb-4">
+                    <label for="{{ form.text.id_for_label }}" class="form-label">
+                        Or type your submission below (optional)
+                    </label>
+                    <textarea class="form-control {% if form.text.errors %}is-invalid{% endif %}" 
+                              id="{{ form.text.id_for_label }}" name="{{ form.text.name }}" 
+                              rows="8" placeholder="Type your submission here...">{{ form.text.value|default:'' }}</textarea>
+                    {% for error in form.text.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                    <div class="form-text">
+                        Note: You can submit both a file and text, or just one of them.
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Important:</strong> Please review your submission before finalizing. 
+                    {% if submission %}
+                        This will update your existing submission.
+                    {% else %}
+                        You can update your submission until the due date.
+                    {% endif %}
+                </div>
+
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% url 'assignments:assignment-detail' assignment.pk %}" 
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-upload"></i> {% if submission %}Update{% else %}Submit{% endif %} Assignment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -7,24 +7,29 @@ from django.utils.html import format_html
 from django.contrib.auth.forms import UserCreationForm
 from .models import UserProfile
 from .forms import TeacherCreationForm
+from django.db import transaction
 
 # Register your models here.
 class UserProfileInline(admin.StackedInline):
     model = UserProfile
     can_delete = False
-    verbose_name_plural = 'profile'
-    fieldsets = (
-        (None, {'fields': ('role', 'identifier')}),
-        ('Personal Info', {'fields': ('date_of_birth', 'address', 'phone_number')}),
-        ('Teacher Info', {'fields': ('department', 'designation', 'qualification', 'joining_date'),
-                         'classes': ('collapse',),
-                         'description': 'Only applicable for teachers'}),
-    )
+    verbose_name_plural = 'Profile'
+    
+    def get_fieldsets(self, request, obj=None):
+        fieldsets = [
+            (None, {'fields': ('role', 'identifier')}),
+            ('Personal Info', {'fields': ('date_of_birth', 'address', 'phone_number')}),
+        ]
+        return fieldsets
+        
+    def get_readonly_fields(self, request, obj=None):
+        # Make joining_date read-only in the admin
+        return ('joining_date',) if obj else ()
 
 class CustomUserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline,)
     list_display = ('username', 'email', 'first_name', 'last_name', 'get_role', 'is_staff')
-    list_filter = ('is_staff', 'is_superuser')
+    list_filter = ('is_staff', 'is_superuser', 'profile__role')
     actions = ['make_teacher', 'make_student']
     add_form = UserCreationForm
     
@@ -33,19 +38,12 @@ class CustomUserAdmin(BaseUserAdmin):
         return redirect('admin:add_teacher')
     
     def get_role(self, obj):
-        try:
-            return obj.profile.get_role_display()
-        except:
-            return 'No role'
+        return obj.profile.get_role_display() if hasattr(obj, 'profile') else 'No role'
     get_role.short_description = 'Role'
     
     def make_teacher(self, request, queryset):
         for user in queryset:
-            try:
-                profile = user.profile
-            except:
-                profile = UserProfile.objects.create(user=user)
-            
+            profile, created = UserProfile.objects.get_or_create(user=user)
             profile.role = 'teacher'
             user.is_staff = True
             profile.save()
@@ -55,11 +53,7 @@ class CustomUserAdmin(BaseUserAdmin):
     
     def make_student(self, request, queryset):
         for user in queryset:
-            try:
-                profile = user.profile
-            except:
-                profile = UserProfile.objects.create(user=user)
-            
+            profile, created = UserProfile.objects.get_or_create(user=user)
             profile.role = 'student'
             profile.save()
         self.message_user(request, f"{queryset.count()} user(s) updated to student role.")
@@ -76,30 +70,27 @@ class CustomUserAdmin(BaseUserAdmin):
         if request.method == 'POST':
             form = TeacherCreationForm(request.POST)
             if form.is_valid():
-                user = form.save(commit=False)
-                user.save()
-                
-                # Create the profile manually
-                profile_data = {
-                    'role': 'teacher',
-                    'identifier': form.cleaned_data.get('identifier'),
-                    'department': form.cleaned_data.get('department', ''),
-                    'designation': form.cleaned_data.get('designation', ''),
-                    'qualification': form.cleaned_data.get('qualification', ''),
-                    'date_of_birth': form.cleaned_data.get('date_of_birth'),
-                    'address': form.cleaned_data.get('address', ''),
-                    'phone_number': form.cleaned_data.get('phone_number', ''),
-                    'joining_date': form.cleaned_data.get('joining_date')
-                }
-                
-                # Create the profile
-                profile = UserProfile(user=user, **profile_data)
-                profile.save()
-                
-                # Set staff status
-                if form.cleaned_data.get('is_staff'):
-                    user.is_staff = True
+                with transaction.atomic():
+                    # First create and save the user
+                    user = form.save(commit=False)
+                    user.is_staff = form.cleaned_data.get('is_staff', False)
                     user.save()
+                    
+                    # Update or create the profile
+                    profile_data = {
+                        'role': 'teacher',
+                        'identifier': form.cleaned_data.get('identifier'),
+                        'date_of_birth': form.cleaned_data.get('date_of_birth'),
+                        'address': form.cleaned_data.get('address', ''),
+                        'phone_number': form.cleaned_data.get('phone_number', '')
+                        # joining_date is auto-set to now() by the model's auto_now_add=True
+                    }
+                    
+                    # Update existing profile or create new one
+                    UserProfile.objects.update_or_create(
+                        user=user,
+                        defaults=profile_data
+                    )
                 
                 self.message_user(request, 'Teacher added successfully')
                 return redirect('..')

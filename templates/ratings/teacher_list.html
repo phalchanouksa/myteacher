@@ -15,9 +15,8 @@
                         <h6 class="card-subtitle mb-2 text-muted">{{ teacher.identifier }}</h6>
                         
                         <p class="card-text">
-                            <strong>Department:</strong> {{ teacher.department|default:"Not specified" }}<br>
-                            <strong>Designation:</strong> {{ teacher.designation|default:"Not specified" }}<br>
-                            <strong>Qualification:</strong> {{ teacher.qualification|default:"Not specified" }}
+                            <strong>Joined on:</strong> {{ teacher.joining_date|date:"F d, Y" }}<br>
+                            <strong>Email:</strong> {{ teacher.user.email }}
                         </p>
                         
                         <div class="mb-3">

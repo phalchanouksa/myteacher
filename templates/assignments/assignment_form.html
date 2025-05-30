@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if form.instance.pk %}Edit{% else %}Create{% endif %} Assignment - MyTeacher{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'assignments:assignment-list' %}">Assignments</a></li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {% if form.instance.pk %}Edit{% else %}Create New{% endif %} Assignment
+            </li>
+        </ol>
+    </nav>
+
+    <div class="card">
+        <div class="card-header">
+            <h2 class="mb-0">{% if form.instance.pk %}Edit{% else %}Create New{% endif %} Assignment</h2>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.title.id_for_label }}" class="form-label">Title</label>
+                    <input type="text" class="form-control {% if form.title.errors %}is-invalid{% endif %}" 
+                           id="{{ form.title.id_for_label }}" name="{{ form.title.name }}" 
+                           value="{{ form.title.value|default:'' }}" required>
+                    {% for error in form.title.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>
+                    <textarea class="form-control {% if form.description.errors %}is-invalid{% endif %}" 
+                              id="{{ form.description.id_for_label }}" name="{{ form.description.name }}" 
+                              rows="5" required>{{ form.description.value|default:'' }}</textarea>
+                    {% for error in form.description.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.due_date.id_for_label }}" class="form-label">Due Date</label>
+                        <input type="datetime-local" class="form-control {% if form.due_date.errors %}is-invalid{% endif %}" 
+                               id="{{ form.due_date.id_for_label }}" name="{{ form.due_date.name }}" 
+                               value="{{ form.due_date.value|date:'Y-m-d\TH:i' }}" required>
+                        {% for error in form.due_date.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.max_marks.id_for_label }}" class="form-label">Max Marks</label>
+                        <input type="number" class="form-control {% if form.max_marks.errors %}is-invalid{% endif %}" 
+                               id="{{ form.max_marks.id_for_label }}" name="{{ form.max_marks.name }}" 
+                               value="{{ form.max_marks.value|default:'100' }}" min="1" required>
+                        {% for error in form.max_marks.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="{{ form.is_published.id_for_label }}" 
+                           name="{{ form.is_published.name }}" {% if form.is_published.value %}checked{% endif %}>
+                    <label class="form-check-label" for="{{ form.is_published.id_for_label }}">
+                        Publish this assignment (visible to students)
+                    </label>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% if form.instance.pk %}{% url 'assignments:assignment-detail' form.instance.pk %}{% else %}{% url 'assignments:assignment-list' %}{% endif %}" 
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> {% if form.instance.pk %}Update{% else %}Create{% endif %} Assignment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Initialize datetime picker
+    document.addEventListener('DOMContentLoaded', function() {
+        // Set minimum datetime to now
+        const now = new Date();
+        // Format to YYYY-MM-DDThh:mm
+        const minDatetime = now.toISOString().slice(0, 16);
+        document.getElementById('{{ form.due_date.id_for_label }}').min = minDatetime;
+    });
+</script>
+{% endblock %}

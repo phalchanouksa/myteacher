@@ -17,10 +17,18 @@
         <div class="row">
             <div class="col-md-6">
                 <p><strong>Teacher ID:</strong> {{ teacher.identifier }}</p>
-                <p><strong>Department:</strong> {{ teacher.department|default:"Not specified" }}</p>
-                <p><strong>Designation:</strong> {{ teacher.designation|default:"Not specified" }}</p>
-                <p><strong>Qualification:</strong> {{ teacher.qualification|default:"Not specified" }}</p>
-                <p><strong>Joining Date:</strong> {{ teacher.joining_date|date:"F d, Y"|default:"Not specified" }}</p>
+                <p><strong>Email:</strong> {{ teacher.user.email }}</p>
+                <p><strong>Full Name:</strong> {{ teacher.user.get_full_name }}</p>
+                <p><strong>Date Joined:</strong> {{ teacher.user.date_joined|date:"F d, Y" }}</p>
+                {% if teacher.date_of_birth %}
+                    <p><strong>Date of Birth:</strong> {{ teacher.date_of_birth|date:"F d, Y" }}</p>
+                {% endif %}
+                {% if teacher.phone_number %}
+                    <p><strong>Phone:</strong> {{ teacher.phone_number }}</p>
+                {% endif %}
+                {% if teacher.address %}
+                    <p><strong>Address:</strong> {{ teacher.address }}</p>
+                {% endif %}
             </div>
             <div class="col-md-6">
                 <div class="card">

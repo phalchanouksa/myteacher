@@ -12,14 +12,14 @@
                 <a href="{% url 'chat_detail' partner.id %}" class="list-group-item list-group-item-action">
                     <div class="d-flex w-100 justify-content-between align-items-center">
                         <div>
-                            <h5 class="mb-1">{{ partner.user.get_full_name }}</h5>
-                            <p class="mb-1 text-muted">{{ partner.department|default:"Department not specified" }}</p>
+                            <h5 class="mb-1" style="font-weight: 600;">{{ partner.user.get_full_name }}</h5>
+                            <p class="mb-1" style="color: var(--apple-medium-gray); font-size: 0.9rem;">{{ partner.department|default:"Department not specified" }}</p>
                         </div>
                         <div class="text-end">
                             {% if partner.role == 'teacher' %}
-                                <span class="badge bg-primary">Teacher</span>
+                                <span class="badge" style="background-color: var(--apple-blue);">Teacher</span>
                             {% else %}
-                                <span class="badge bg-success">Student</span>
+                                <span class="badge" style="background-color: var(--apple-green);">Student</span>
                             {% endif %}
                         </div>
                     </div>
@@ -28,7 +28,7 @@
         </div>
     {% else %}
         <div class="alert alert-info">
-            <p>No conversations yet. Start chatting with teachers or students!</p>
+            <p style="margin-bottom: 0;">No conversations yet. Start chatting with teachers or students!</p>
         </div>
         {% if user_profile.role == 'student' %}
             <a href="{% url 'teacher_list' %}" class="btn btn-primary">

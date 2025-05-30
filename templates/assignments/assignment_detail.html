@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ assignment.title }} - MyTeacher{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'assignments:assignment-list' %}">Assignments</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ assignment.title|truncatewords:3 }}</li>
+        </ol>
+    </nav>
+
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="mb-0">{{ assignment.title }}</h2>
+            <div>
+                <span class="badge {% if assignment.is_published %}bg-success{% else %}bg-warning{% endif %}">
+                    {% if assignment.is_published %}Published{% else %}Draft{% endif %}
+                </span>
+                {% if assignment.is_past_due %}
+                    <span class="badge bg-danger">Past Due</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="card-body">
+            <p class="card-text">{{ assignment.description|linebreaks }}</p>
+            <div class="mt-3">
+                <p><strong>Due Date:</strong> {{ assignment.due_date|date:"F d, Y H:i" }}</p>
+                <p><strong>Max Marks:</strong> {{ assignment.max_marks }}</p>
+                <p><strong>Created by:</strong> {{ assignment.teacher.user.get_full_name }}</p>
+            </div>
+            
+            {% if user.profile.role == 'teacher' %}
+                <div class="mt-3">
+                    <a href="{% url 'assignments:assignment-update' assignment.pk %}" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i> Edit Assignment
+                    </a>
+                    <a href="{% url 'assignments:assignment-delete' assignment.pk %}" class="btn btn-outline-danger">
+                        <i class="bi bi-trash"></i> Delete
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if user.profile.role == 'student' %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="mb-0">Your Submission</h3>
+            </div>
+            <div class="card-body">
+                {% if submission %}
+                    <div class="alert alert-success">
+                        <p><strong>Submitted on:</strong> {{ submission.submitted_at|date:"F d, Y H:i" }}</p>
+                        {% if submission.file %}
+                            <p><strong>File:</strong> 
+                                <a href="{% url 'assignments:submission-download' submission.pk %}">
+                                    {{ submission.file.name|cut:"submissions/" }}
+                                </a>
+                            </p>
+                        {% endif %}
+                        {% if submission.text %}
+                            <div class="mt-2 p-2 bg-light rounded">
+                                <h5>Your Submission Text:</h5>
+                                <p>{{ submission.text|linebreaks }}</p>
+                            </div>
+                        {% endif %}
+                        {% if submission.grade is not None %}
+                            <div class="mt-3">
+                                <h5>Grading:</h5>
+                                <p><strong>Grade:</strong> {{ submission.get_grade_display }}</p>
+                                {% if submission.feedback %}
+                                    <div class="p-2 bg-light rounded">
+                                        <strong>Feedback:</strong>
+                                        <p>{{ submission.feedback|linebreaks }}</p>
+                                    </div>
+                                {% endif %}
+                                {% if submission.is_plagiarized %}
+                                    <div class="alert alert-warning mt-2">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        <strong>Plagiarism Detected:</strong>
+                                        <p>{{ submission.plagiarism_report|default:"This submission has been flagged for potential plagiarism." }}</p>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% else %}
+                            <p class="text-muted">Your submission is awaiting grading.</p>
+                        {% endif %}
+                    </div>
+                    {% comment %} Update Submission button removed {% endcomment %}
+                {% else %}
+                    {% if assignment.is_past_due %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            The due date for this assignment has passed. Late submissions are not allowed.
+                        </div>
+                    {% else %}
+                        <p>You haven't submitted this assignment yet.</p>
+                        <a href="{% url 'assignments:assignment-submit' assignment.pk %}" class="btn btn-primary">
+                            <i class="bi bi-upload"></i> Submit Assignment
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    {% else %}
+        <div class="card">
+            <div class="card-header">
+                <h3 class="mb-0">Submissions</h3>
+            </div>
+            <div class="card-body">
+                {% if submissions %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Submitted</th>
+                                    <th>Status</th>
+                                    <th>Grade</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for sub in submissions %}
+                                    <tr>
+                                        <td>{{ sub.student.user.get_full_name }}</td>
+                                        <td>{{ sub.submitted_at|date:"M d, Y H:i" }}</td>
+                                        <td>
+                                            {% if sub.is_plagiarized %}
+                                                <span class="badge bg-warning">Plagiarism Detected</span>
+                                            {% else %}
+                                                <span class="badge bg-success">Submitted</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if sub.grade is not None %}
+                                                {{ sub.get_grade_display }}
+                                            {% else %}
+                                                <span class="text-muted">Not graded</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'assignments:submission-grade' sub.pk %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil"></i> Grade
+                                            </a>
+                                            {% if sub.file %}
+                                                <a href="{% url 'assignments:submission-download' sub.pk %}" class="btn btn-sm btn-outline-secondary">
+                                                    <i class="bi bi-download"></i> Download
+                                                </a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-info">
+                        No submissions yet.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
