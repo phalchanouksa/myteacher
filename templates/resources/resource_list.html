@@ -1,0 +1,309 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Knowledge Resources - MyTeacher{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-5">
+        <div class="mb-4 mb-md-0">
+            <h1 class="display-6 fw-semibold mb-2">Knowledge Resources</h1>
+            <p class="text-muted mb-0">Explore and share educational resources with the community</p>
+        </div>
+        {% if user.is_authenticated %}
+        <a href="{% url 'resources:create' %}" class="btn btn-primary px-4" style="border-radius: 980px;">
+            <i class="bi bi-plus-circle me-2"></i> Share Resource
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="card border-0 shadow-sm mb-5" style="border-radius: 24px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px);">
+        <div class="card-body p-4">
+            <form method="get" class="row g-4">
+                <div class="col-lg-6">
+                    <div class="position-relative">
+                        <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                        <input type="text" name="q" class="form-control form-control-lg border-0 ps-5" 
+                               placeholder="Search resources..." value="{{ query }}" 
+                               style="border-radius: 16px; background-color: var(--apple-light-gray);">
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <select name="type" class="form-select form-select-lg border-0" onchange="this.form.submit()"
+                            style="border-radius: 16px; background-color: var(--apple-light-gray);">
+                        <option value="">All Types</option>
+                        {% for type_code, type_name in resource_types %}
+                        <option value="{{ type_code }}" {% if type_code == current_type %}selected{% endif %}>
+                            {{ type_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-lg-3">
+                    <select name="sort" class="form-select form-select-lg border-0" onchange="this.form.submit()"
+                            style="border-radius: 16px; background-color: var(--apple-light-gray);">
+                        <option value="-created_at" {% if current_sort == '-created_at' %}selected{% endif %}>Newest First</option>
+                        <option value="created_at" {% if current_sort == 'created_at' %}selected{% endif %}>Oldest First</option>
+                        <option value="likes" {% if current_sort == 'likes' %}selected{% endif %}>Most Liked</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        {% for resource in resources %}
+        <div class="col-12 mb-4">
+            <div class="card border-0 shadow-sm" 
+                 style="border-radius: 24px; transition: all 0.3s ease; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px);">
+                <div class="card-body p-4">
+                    <!-- Resource Header -->
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="badge px-3 py-2 text-nowrap" 
+                                  style="background-color: var(--apple-light-gray); color: var(--apple-dark-gray); border-radius: 980px;">
+                                <i class="bi bi-{% if resource.resource_type == 'document' %}file-text{% elif resource.resource_type == 'video' %}play-circle{% elif resource.resource_type == 'link' %}link-45deg{% elif resource.resource_type == 'presentation' %}easel{% elif resource.resource_type == 'code' %}code-square{% else %}collection{% endif %} me-2"></i>
+                                {{ resource.get_resource_type_display }}
+                            </span>
+                            <span class="text-muted" style="font-size: 0.875rem;">
+                                <i class="bi bi-person me-1"></i>
+                                {{ resource.author.user.get_full_name }}
+                            </span>
+                        </div>
+                        <small class="text-muted">{{ resource.created_at|timesince }} ago</small>
+                    </div>
+
+                    <!-- Resource Content -->
+                    <h5 class="card-title mb-2" style="font-weight: 600;">{{ resource.title }}</h5>
+                    <p class="text-muted mb-3" style="font-size: 0.9375rem; display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
+                        {{ resource.description|truncatewords:30 }}
+                    </p>
+
+                    <!-- Tags -->
+                    {% if resource.tags %}
+                    <div class="mb-3">
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for tag in resource.get_tag_list %}
+                            <span class="badge text-nowrap px-2 py-1" 
+                                  style="background-color: var(--apple-light-gray); color: var(--apple-dark-gray); border-radius: 980px; font-size: 0.8125rem;">
+                                {{ tag }}
+                            </span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Resource Footer -->
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                        <div class="d-flex align-items-center gap-3">
+                            <a href="javascript:void(0);" class="like-button text-decoration-none d-flex align-items-center" data-resource-id="{{ resource.id }}" style="color: var(--apple-dark-gray);">
+                                <i class="bi {% if resource.is_liked_by_user %}bi-heart-fill text-danger{% else %}bi-heart{% endif %} me-2" style="{% if resource.is_liked_by_user %}color: var(--apple-red);{% endif %}"></i>
+                                <span id="likes-count-{{ resource.id }}" style="font-weight: 500;">{{ resource.get_likes_count }}</span>
+                            </a>
+                            <span class="text-muted" style="font-size: 0.875rem;">{{ resource.author.get_role_display }}</span>
+                        </div>
+                        <a href="{% url 'resources:detail' resource.pk %}" 
+                           class="btn btn-primary btn-sm px-3" 
+                           style="border-radius: 980px;">
+                            View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="card border-0 shadow-sm text-center py-5" 
+                 style="border-radius: 24px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(20px);">
+                <div class="card-body p-5">
+                    <i class="bi bi-collection display-1 text-muted mb-4"></i>
+                    <h3 class="fw-semibold text-muted mb-3">No Resources Found</h3>
+                    <p class="text-muted mb-4">
+                        {% if user.is_authenticated %}
+                            Share your knowledge with the community by adding your first resource!
+                        {% else %}
+                            Please check back later for new resources.
+                        {% endif %}
+                    </p>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'resources:create' %}" class="btn btn-primary px-4" style="border-radius: 980px;">
+                        <i class="bi bi-plus-circle me-2"></i> Share Resource
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if is_paginated %}
+    <nav aria-label="Page navigation" class="mt-5">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link border-0 shadow-sm mx-1" 
+                   href="?page=1{% if query %}&q={{ query }}{% endif %}{% if current_type %}&type={{ current_type }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}" 
+                   style="border-radius: 12px; width: 40px; height: 40px; line-height: 24px; text-align: center;">
+                    <i class="bi bi-chevron-double-left"></i>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link border-0 shadow-sm mx-1" 
+                              style="border-radius: 12px; background-color: var(--apple-blue); width: 40px; height: 40px; line-height: 24px; text-align: center;">
+                            {{ num }}
+                        </span>
+                    </li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link border-0 shadow-sm mx-1" 
+                           href="?page={{ num }}{% if query %}&q={{ query }}{% endif %}{% if current_type %}&type={{ current_type }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
+                           style="border-radius: 12px; width: 40px; height: 40px; line-height: 24px; text-align: center;">
+                            {{ num }}
+                        </a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link border-0 shadow-sm mx-1" 
+                   href="?page={{ page_obj.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if current_type %}&type={{ current_type }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}"
+                   style="border-radius: 12px; width: 40px; height: 40px; line-height: 24px; text-align: center;">
+                    <i class="bi bi-chevron-double-right"></i>
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+
+<style>
+    .badge {
+        font-weight: normal;
+    }
+
+    .form-control:focus, .form-select:focus {
+        box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.15);
+        border-color: transparent;
+    }
+
+    .page-link:focus {
+        box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.15);
+    }
+
+    @media (max-width: 768px) {
+        .container {
+            padding-top: 2rem !important;
+            padding-bottom: 2rem !important;
+        }
+
+        .card-body {
+            padding: 1.25rem !important;
+        }
+        
+        .badge {
+            font-size: 0.75rem !important;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .d-flex.gap-3 {
+            gap: 0.5rem !important;
+        }
+    }
+</style>
+
+<!-- Inline JavaScript for like functionality -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log("Resource list page loaded - setting up like buttons");
+    
+    // Find all like buttons
+    var likeButtons = document.querySelectorAll('.like-button');
+    console.log("Found", likeButtons.length, "like buttons");
+    
+    // Restore like states from localStorage
+    likeButtons.forEach(function(button) {
+      var resourceId = button.getAttribute('data-resource-id');
+      var heartIcon = button.querySelector('i');
+      var likeKey = 'resource_liked_' + resourceId;
+      
+      // Check if this resource was liked previously
+      if (localStorage.getItem(likeKey) === 'true') {
+        heartIcon.classList.remove('bi-heart');
+        heartIcon.classList.add('bi-heart-fill', 'text-danger');
+        heartIcon.style.color = '#ff3b30'; // Apple red color
+      }
+    });
+    
+    // Add click handler to each button
+    likeButtons.forEach(function(button) {
+      button.addEventListener('click', function(e) {
+        e.preventDefault(); // Prevent any default action
+        console.log("Like button clicked");
+        
+        var resourceId = this.getAttribute('data-resource-id');
+        console.log("Resource ID:", resourceId);
+        
+        var heartIcon = this.querySelector('i');
+        var likeUrl = "/resources/" + resourceId + "/like/";
+        console.log("Like URL:", likeUrl);
+        
+        // Animate heart on click
+        heartIcon.style.transform = 'scale(1.3)';
+        setTimeout(function() {
+          heartIcon.style.transform = 'scale(1)';
+        }, 200);
+        
+        // Get the CSRF token
+        var csrfToken = "{{ csrf_token }}";
+        console.log("CSRF Token length:", csrfToken.length);
+        
+        // Send the AJAX request using fetch
+        fetch(likeUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': csrfToken
+          },
+          credentials: 'same-origin'
+        })
+        .then(function(response) {
+          if (!response.ok) {
+            throw new Error('Network response was not ok: ' + response.statusText);
+          }
+          return response.json();
+        })
+        .then(function(data) {
+          console.log("Like request successful:", data);
+          document.getElementById('likes-count-' + resourceId).textContent = data.likes_count;
+          
+          var likeKey = 'resource_liked_' + resourceId;
+          
+          if (data.liked) {
+            // User liked the resource
+            heartIcon.classList.remove('bi-heart');
+            heartIcon.classList.add('bi-heart-fill', 'text-danger');
+            heartIcon.style.color = '#ff3b30'; // Apple red color
+            localStorage.setItem(likeKey, 'true');
+          } else {
+            // User unliked the resource
+            heartIcon.classList.remove('bi-heart-fill', 'text-danger');
+            heartIcon.classList.add('bi-heart');
+            heartIcon.style.color = '';
+            localStorage.setItem(likeKey, 'false');
+          }
+        })
+        .catch(function(error) {
+          console.error("Like request failed:", error);
+        });
+      });
+    });
+  });
+</script>
+{% endblock %}
