@@ -49,13 +49,10 @@ class ResourceForm(forms.ModelForm):
         return description
 
     def clean_tags(self):
-        tags = self.cleaned_data.get('tags')
-        if tags:
-            tag_list = [tag.strip() for tag in tags.split(',')]
-            if len(tag_list) > 10:
-                raise forms.ValidationError('You can only add up to 10 tags.')
-            return ', '.join(tag_list)
-        return tags
+        tags = self.cleaned_data.get('tags', '')
+        if len(tags) > 255:
+            raise forms.ValidationError('Tags input is too long. Please keep it under 255 characters.')
+        return ','.join([tag.strip() for tag in tags.split(',') if tag.strip()])
 
     def clean(self):
         cleaned_data = super().clean()

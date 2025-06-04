@@ -49,26 +49,44 @@
           </h2>
 
           <form method="post" enctype="multipart/form-data" id="resourceForm">
-            {% csrf_token %} {% for field in form %}
-            <div class="mb-4">
-              <label
-                for="{{ field.id_for_label }}"
-                class="form-label"
-                style="font-weight: 500"
-              >
-                {{ field.label }}
-              </label>
-              {{ field }} {% if field.help_text %}
-              <div class="form-text text-muted">{{ field.help_text }}</div>
-              {% endif %} {% if field.errors %}
-              <div class="alert alert-danger mt-2" style="border-radius: 12px">
-                {{ field.errors }}
-              </div>
+            {% csrf_token %}
+            {% for field in form %}
+              {% if field.name == 'file' %}
+              <div class="mb-4" id="fileUploadSection">
+              {% elif field.name == 'external_link' %}
+              <div class="mb-4" id="linkSection">
+              {% else %}
+              <div class="mb-4">
               {% endif %}
-            </div>
+                <label
+                  for="{{ field.id_for_label }}"
+                  class="form-label"
+                  style="font-weight: 500"
+                >
+                  {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                <div class="form-text text-muted">{{ field.help_text }}</div>
+                {% endif %}
+                {% if field.errors %}
+                <div class="alert alert-danger mt-2" style="border-radius: 12px">
+                  {{ field.errors }}
+                </div>
+                {% endif %}
+              </div>
             {% endfor %}
 
-            <div class="d-flex gap-2">
+            {# Display non-field errors here, if any (e.g., from the form's clean() method) #}
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger mt-2" style="border-radius: 12px">
+                {% for error in form.non_field_errors %}
+                  <p>{{ error }}</p>
+                {% endfor %}
+              </div>
+            {% endif %}
+
+            <div class="d-flex gap-2 mt-4">
               <button
                 type="submit"
                 class="btn btn-primary"

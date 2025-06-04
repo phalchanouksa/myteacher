@@ -6,6 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.db import models
+from django.db.models import Exists, OuterRef, Count, Value, BooleanField
 from django.core.exceptions import PermissionDenied
 from .models import Resource, Comment
 from .forms import ResourceForm, CommentForm
@@ -20,8 +21,26 @@ class ResourceListView(ListView):
     paginate_by = 12
     
     def get_queryset(self):
-        queryset = Resource.objects.all().select_related('author')
-        
+        queryset = Resource.objects.all().select_related('author__user') # Efficiently fetch user
+
+        # Annotate with likes_count for sorting and display
+        queryset = queryset.annotate(likes_count_annotation=Count('likes'))
+
+        # Annotate with is_liked_by_user for the current user
+        if self.request.user.is_authenticated:
+            user_profile = self.request.user.profile
+            # Check if a like from the current user exists for each resource
+            user_likes_subquery = Resource.likes.through.objects.filter(
+                resource_id=OuterRef('pk'),
+                userprofile_id=user_profile.pk
+            )
+            queryset = queryset.annotate(
+                is_liked_by_user=Exists(user_likes_subquery)
+            )
+        else:
+            # For anonymous users, is_liked_by_user is always False
+            queryset = queryset.annotate(is_liked_by_user=Value(False, output_field=BooleanField()))
+
         # Filter by search query
         q = self.request.GET.get('q')
         if q:
@@ -30,19 +49,20 @@ class ResourceListView(ListView):
                 models.Q(description__icontains=q) |
                 models.Q(tags__icontains=q)
             )
-        
+
         # Filter by type
         resource_type = self.request.GET.get('type')
         if resource_type:
             queryset = queryset.filter(resource_type=resource_type)
-            
+
         # Sort options
         sort = self.request.GET.get('sort', '-created_at')
         if sort == 'likes':
-            queryset = sorted(queryset, key=lambda x: x.get_likes_count(), reverse=True)
-        else:
+            queryset = queryset.order_by('-likes_count_annotation', '-created_at') # Sort by likes, then by date
+        elif sort:
             queryset = queryset.order_by(sort)
-            
+        # Default sort is already applied if no sort parameter is given and it's not 'likes'
+
         return queryset
     
     def get_context_data(self, **kwargs):
@@ -59,11 +79,38 @@ class ResourceDetailView(DetailView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        resource = self.object # Get the current resource instance
+
+        # Annotate the single resource object
+        # We need to re-fetch it or work with the instance to annotate. 
+        # For simplicity and consistency with list view, let's re-query and annotate.
+        # However, for a single object, direct annotation is more complex than on a queryset.
+        # A more straightforward way for a single object is to add these as properties or calculate them here.
+
+        resource_qs = Resource.objects.filter(pk=resource.pk)
+        resource_qs = resource_qs.annotate(likes_count_annotation=Count('likes'))
+
+        if self.request.user.is_authenticated:
+            user_profile = self.request.user.profile
+            user_likes_subquery = Resource.likes.through.objects.filter(
+                resource_id=resource.pk, # Use resource.pk directly
+                userprofile_id=user_profile.pk
+            )
+            resource_qs = resource_qs.annotate(
+                is_liked_by_user=Exists(user_likes_subquery)
+            )
+        else:
+            resource_qs = resource_qs.annotate(is_liked_by_user=Value(False, output_field=BooleanField()))
+        
+        # Get the annotated resource instance
+        annotated_resource = resource_qs.first()
+
+        context['resource'] = annotated_resource # Override the object with the annotated one
         context['comment_form'] = CommentForm()
         context['related_resources'] = Resource.objects.filter(
             models.Q(tags__icontains=self.object.tags) |
             models.Q(resource_type=self.object.resource_type)
-        ).exclude(id=self.object.id)[:4]
+        ).exclude(id=self.object.id).annotate(likes_count_annotation=Count('likes'))[:4] # Also annotate related for consistency if needed
         return context
 
 class ResourceCreateView(LoginRequiredMixin, CreateView):

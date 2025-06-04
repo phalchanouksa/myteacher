@@ -3,6 +3,7 @@
 {% block title %}Knowledge Resources - MyTeacher{% endblock %}
 
 {% block content %}
+{% load static %}
 <div class="container py-5">
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-5">
         <div class="mb-4 mb-md-0">
@@ -97,8 +98,8 @@
                     <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
                         <div class="d-flex align-items-center gap-3">
                             <a href="javascript:void(0);" class="like-button text-decoration-none d-flex align-items-center" data-resource-id="{{ resource.id }}" style="color: var(--apple-dark-gray);">
-                                <i class="bi {% if resource.is_liked_by_user %}bi-heart-fill text-danger{% else %}bi-heart{% endif %} me-2" style="{% if resource.is_liked_by_user %}color: var(--apple-red);{% endif %}"></i>
-                                <span id="likes-count-{{ resource.id }}" style="font-weight: 500;">{{ resource.get_likes_count }}</span>
+                                <i class="bi {% if resource.is_liked_by_user %}bi-heart-fill text-danger{% else %}bi-heart{% endif %} me-2"></i>
+                                <span id="likes-count-{{ resource.id }}" style="font-weight: 500;">{{ resource.likes_count_annotation }}</span>
                             </a>
                             <span class="text-muted" style="font-size: 0.875rem;">{{ resource.author.get_role_display }}</span>
                         </div>
@@ -221,50 +222,23 @@
 <!-- Inline JavaScript for like functionality -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    console.log("Resource list page loaded - setting up like buttons");
-    
-    // Find all like buttons
     var likeButtons = document.querySelectorAll('.like-button');
-    console.log("Found", likeButtons.length, "like buttons");
     
-    // Restore like states from localStorage
-    likeButtons.forEach(function(button) {
-      var resourceId = button.getAttribute('data-resource-id');
-      var heartIcon = button.querySelector('i');
-      var likeKey = 'resource_liked_' + resourceId;
-      
-      // Check if this resource was liked previously
-      if (localStorage.getItem(likeKey) === 'true') {
-        heartIcon.classList.remove('bi-heart');
-        heartIcon.classList.add('bi-heart-fill', 'text-danger');
-        heartIcon.style.color = '#ff3b30'; // Apple red color
-      }
-    });
-    
-    // Add click handler to each button
     likeButtons.forEach(function(button) {
       button.addEventListener('click', function(e) {
-        e.preventDefault(); // Prevent any default action
-        console.log("Like button clicked");
+        e.preventDefault(); 
         
         var resourceId = this.getAttribute('data-resource-id');
-        console.log("Resource ID:", resourceId);
-        
         var heartIcon = this.querySelector('i');
         var likeUrl = "/resources/" + resourceId + "/like/";
-        console.log("Like URL:", likeUrl);
         
-        // Animate heart on click
         heartIcon.style.transform = 'scale(1.3)';
         setTimeout(function() {
           heartIcon.style.transform = 'scale(1)';
         }, 200);
         
-        // Get the CSRF token
         var csrfToken = "{{ csrf_token }}";
-        console.log("CSRF Token length:", csrfToken.length);
         
-        // Send the AJAX request using fetch
         fetch(likeUrl, {
           method: 'POST',
           headers: {
@@ -280,27 +254,21 @@
           return response.json();
         })
         .then(function(data) {
-          console.log("Like request successful:", data);
-          document.getElementById('likes-count-' + resourceId).textContent = data.likes_count;
-          
-          var likeKey = 'resource_liked_' + resourceId;
+          var likesCountSpan = document.getElementById('likes-count-' + resourceId);
+          if (likesCountSpan) {
+            likesCountSpan.textContent = data.likes_count;
+          }
           
           if (data.liked) {
-            // User liked the resource
             heartIcon.classList.remove('bi-heart');
             heartIcon.classList.add('bi-heart-fill', 'text-danger');
-            heartIcon.style.color = '#ff3b30'; // Apple red color
-            localStorage.setItem(likeKey, 'true');
           } else {
-            // User unliked the resource
             heartIcon.classList.remove('bi-heart-fill', 'text-danger');
             heartIcon.classList.add('bi-heart');
-            heartIcon.style.color = '';
-            localStorage.setItem(likeKey, 'false');
           }
         })
         .catch(function(error) {
-          console.error("Like request failed:", error);
+          // Optionally, display a user-friendly error message here
         });
       });
     });
